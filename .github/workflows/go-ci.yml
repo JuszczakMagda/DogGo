@@ -33,11 +33,11 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build binary
-        run: go build -v -o bin/myapp ./src
+        run: go build -v -o bin/DogGo
 
       - name: Verify binary exists
         run: |
-          if [ ! -f bin/myapp ]; then
+          if [ ! -f bin/DogGo ]; then
             echo "Build failed: binary not found"
             exit 1
           fi
