@@ -1,4 +1,4 @@
-name: Go Build
+name: Go CI
 
 on:
   pull_request:
@@ -11,7 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    outputs:
+      binary-path: bin/myapp
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -19,7 +20,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.20'  # or your preferred Go version
+          go-version: '1.24'
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -32,7 +33,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build binary
-        run: go build -v -o bin/myapp ./src  # Adjust path & output binary name
+        run: go build -v -o bin/myapp ./src
 
       - name: Verify binary exists
         run: |
@@ -40,3 +41,29 @@ jobs:
             echo "Build failed: binary not found"
             exit 1
           fi
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run tests
+        run: go test -v ./...
