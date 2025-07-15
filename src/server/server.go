@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ type RandomDogResponse struct {
 	Status  string `json:"status"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<h1>DANTE</h1>")
 }
 
@@ -36,15 +36,15 @@ func getRandomDog() RandomDogResponse {
 	return parsedBody
 }
 
-func randomDogHandler(w http.ResponseWriter, r *http.Request) {
+func RandomDogHandler(w http.ResponseWriter, r *http.Request) {
 	randomDogResponse := getRandomDog()
 	if randomDogResponse.Status != "Failed" {
 		fmt.Fprintf(w, "<div style=display:flex;justify-self:center;width:500px;height:500px;><img style=height:-webkit-fill-available;width:-webkit-fill-available; src=%s /> </div>", randomDogResponse.Message)
 	}
 }
 
-func main() {
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/doggo", randomDogHandler)
+func StartServer() {
+	http.HandleFunc("/", Handler)
+	http.HandleFunc("/doggo", RandomDogHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
