@@ -43,8 +43,14 @@ func RandomDogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func StartServer() {
+	log.Println("Starting web server")
+	http.HandleFunc("/health", healthCheck)
 	http.HandleFunc("/", Handler)
 	http.HandleFunc("/doggo", RandomDogHandler)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":80", nil))
 }

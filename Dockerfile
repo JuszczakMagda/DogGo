@@ -23,7 +23,7 @@ FROM alpine:latest
 COPY --from=builder /bin/doggo /doggo
 
 # Expose port 8080
-EXPOSE 8080
+EXPOSE 80
 
 # Run the binary
 ENTRYPOINT ["/doggo"]
