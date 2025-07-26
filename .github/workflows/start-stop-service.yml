@@ -1,0 +1,41 @@
+name: "Start/Stop ECS Service"
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Enable or Disable ECS Service"
+        required: true
+        default: "disable"
+        type: choice
+        options:
+          - enable
+          - disable
+
+jobs:
+  toggle-ecs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Scale ECS Service
+        run: |
+          CLUSTER_NAME="considerate-bird-hcjqa8"
+          SERVICE_NAME="doggo-task-definition-service-n5hk3el0"
+          REGION="us-east-1"
+
+          if [ "${{ github.event.inputs.action }}" = "enable" ]; then
+            DESIRED=1
+          else
+            DESIRED=0
+          fi
+
+          aws ecs update-service \
+            --cluster "$CLUSTER_NAME" \
+            --service "$SERVICE_NAME" \
+            --desired-count $DESIRED \
+            --region "$REGION"

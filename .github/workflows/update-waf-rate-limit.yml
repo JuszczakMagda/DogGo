@@ -1,0 +1,57 @@
+name: "Update WAF Rate Limit"
+on:
+  workflow_dispatch:
+    inputs:
+      rate_limit:
+        description: "New rate limit (requests per 10 min per IP)"
+        required: true
+        default: "10"
+
+jobs:
+  update-waf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update WAF Rate Limit Rule
+        run: |
+          WAF_NAME="CreatedByALB-doggo-alb"  
+          WAF_SCOPE="REGIONAL"
+          WAF_RULE_NAME="doggo-rate-limit"
+          REGION="us-east-1"
+          
+          echo "Getting WebACL id..."
+          WEB_ACL_ID=$(aws wafv2 list-web-acls --scope REGIONAL --region us-east-1 \
+                  --query "WebACLs[?Name=='CreatedByALB-doggo-alb'].Id | [0]" \
+                  --output text)
+          
+          echo "Fetching WebACL..."
+          WEB_ACL=$(aws wafv2 get-web-acl \
+          --scope "$WAF_SCOPE" \
+          --name "$WAF_NAME" \
+          --id "$WEB_ACL_ID" \
+          --region "$REGION")
+          
+          
+
+          LOCK_TOKEN=$(echo "$WEB_ACL" | jq -r '.LockToken')
+          RULES=$(echo "$WEB_ACL" | jq '.WebACL.Rules')
+
+          echo "Updating rate limit..."
+          UPDATED_RULES=$(echo "$RULES" | jq --arg name "$WAF_RULE_NAME" --argjson rateLimit "${{ github.event.inputs.rate_limit }}" '
+            map(if .Name == $name then .Action.Block={} | .Statement.RateBasedStatement.Limit = $rateLimit else . end)')
+
+          aws wafv2 update-web-acl \
+            --name "$WAF_NAME" \
+            --id "$WEB_ACL_ID" \
+            --scope "$WAF_SCOPE" \
+            --default-action Allow={} \
+            --region "$REGION" \
+            --rules "$UPDATED_RULES" \
+            --visibility-config SampledRequestsEnabled=true,CloudWatchMetricsEnabled=true,MetricName=doggo-rate-limit \
+            --lock-token "$LOCK_TOKEN"
