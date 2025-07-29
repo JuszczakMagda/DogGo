@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type RandomDogResponse struct {
@@ -39,7 +40,16 @@ func getRandomDog() RandomDogResponse {
 func RandomDogHandler(w http.ResponseWriter, r *http.Request) {
 	randomDogResponse := getRandomDog()
 	if randomDogResponse.Status != "Failed" {
-		fmt.Fprintf(w, "<div style=display:flex;justify-self:center;width:500px;height:500px;><img style=height:-webkit-fill-available;width:-webkit-fill-available; src=%s /> </div>", randomDogResponse.Message)
+		breed := strings.Split(randomDogResponse.Message, "/")[len(strings.Split(randomDogResponse.Message, "/"))-2]
+		breed = strings.ReplaceAll(breed, "-", " ")
+		breed = strings.ToTitle(breed)
+		fmt.Fprintf(w,
+			"<div style=display:flex;flex-direction:column;justify-self:center;width:500px;height:500px;>"+
+				"<h1 style=align-self:center;>Breed: %s</h1>"+
+				"<img style=height:-webkit-fill-available;width:-webkit-fill-available; src=%s />"+
+				"</div>",
+			breed,
+			randomDogResponse.Message)
 	}
 }
 
